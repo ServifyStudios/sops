@@ -169,7 +169,29 @@ Apply this on every site footer, no exceptions.
 
 ---
 
-## 7. Images — Always Compress Before Deploy
+## 7. Font Size Minimums for Mobile & Tablet
+
+Font size affects readability directly. These are the minimums established on the AJC project — do not go below these on any sales page:
+
+| Element | Mobile minimum | Tablet minimum |
+|---|---|---|
+| Body / paragraph text | 16.5px (1.03rem) | 16px |
+| 2-column card text | ~15px (0.93rem) | 15px |
+| Section labels (uppercase) | ~14px (0.88rem) | 14px |
+| Nav links (mobile drawer) | ~13px (0.82rem) | — |
+| Hero headline | `clamp(1.55rem, 6vw, 2.1rem)` | — |
+
+**Why these numbers matter:**
+- Body text below 16px on mobile causes users to pinch-zoom, which breaks layout
+- 2-col card text can go slightly smaller (0.93rem) only to avoid overflow — not for style
+- Section labels are uppercase and spaced out, so they read small naturally; 0.88rem is the floor
+- Hero headlines should use `clamp()` so they scale with the viewport rather than jumping at breakpoints
+
+**Rule:** When in doubt, go larger. Readable beats elegant on mobile.
+
+---
+
+## 8. Images — Always Compress Before Deploy
 
 All images must be converted to WebP before committing. On this project, uncompressed images (64MB total) caused Vercel bandwidth to reach 22.75GB — 99.9% of the account's usage.
 
@@ -217,3 +239,7 @@ background-image: url('https://your-project.vercel.app/assets/images/hero.webp')
 | Images before deploy | Convert to WebP via compress-images.js |
 | Cloudflare proxy | Absolute Vercel URLs on all assets, no `<base>` tag |
 | Mobile nav | No backdrop-filter on nav, 3-stripe hamburger always visible |
+| Body text mobile | Minimum 16.5px — never below 16px |
+| Card text (2-col) | Minimum 0.93rem — only smaller to prevent overflow |
+| Section labels | Minimum 0.88rem |
+| Hero headline | Use clamp() — never fixed px on mobile |
