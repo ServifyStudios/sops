@@ -113,6 +113,49 @@ On this project:
 
 ---
 
+## 5e. Accordions / Toggles — Keep Them Independent
+
+**Problem encountered (Sarah Fox coaching page):** Three FAQ-style toggle sections ("If you are a mother", "If you are an entrepreneur", "If you are a man driven at work") were built as a mutually-exclusive accordion — opening one auto-closed whichever other was open, tracked via a single `openTab` state value.
+
+This broke the experience: when a tall panel (e.g. mother's) was open and the user clicked a different toggle, the open panel collapsed instantly above the clicked button. Collapsing that height moved everything below it upward in the document — but the browser's scroll position (`scrollY`) doesn't move to compensate. The user experiences this as the page jumping down to reveal much later content, with no scroll animation to explain why. It reads as broken, not intentional.
+
+**First fix attempted (wrong):** Tried to actively scroll/re-center the clicked toggle's title after the state change — first with a single delayed `scrollIntoView`, then with a continuous `requestAnimationFrame` loop re-centering the button every frame while the panels animated. Both technically worked but felt clunky and added motion the user never asked for. The user's actual ask was simpler: **don't move the screen at all.**
+
+**Real fix:** Make each toggle independent. Track open/closed state per toggle (an object of booleans, e.g. `openTabs.mother`, `openTabs.entrepreneur`, `openTabs.man`), not a single shared "which one is open" value. Opening one toggle never closes another. Content only grows *downward* from the clicked button's own position — nothing above or at the current scroll position ever collapses, so there is nothing to compensate for and no scroll script is needed at all.
+
+```javascript
+// Wrong — mutually exclusive, causes layout-shift jump:
+toggleMother: () => this.setState((s) => ({ openTab: s.openTab === 'mother' ? null : 'mother' })),
+
+// Right — independent, no shared state, no jump:
+toggleMother: () => this.setState((s) => ({
+  openTabs: { ...s.openTabs, mother: !s.openTabs.mother }
+})),
+```
+
+**Rule:** Any set of sibling accordions/toggles/FAQ panels on a page must open and close independently of each other by default, unless the client explicitly asks for exclusive (radio-button-style) behavior. Independent toggles avoid layout-shift scroll jumps entirely — it's a simpler fix than trying to patch the jump after the fact with scroll-anchoring or JS re-centering.
+
+---
+
+## 5f. Footer Copyright Year — Never Hardcode
+
+**Rule:** The footer copyright year must always be computed at render time, never hardcoded as a static string. A hardcoded year (`© 2026`) silently goes stale every January and nobody remembers to update it across every site.
+
+```javascript
+// Wrong — goes stale next year:
+<span>© 2026</span>
+
+// Right — always current:
+currentYear: new Date().getFullYear(),
+```
+```html
+<span>© {{ currentYear }}</span>
+```
+
+Apply this on every site footer, no exceptions.
+
+---
+
 ## 6. Mobile Navigation
 
 **What worked:**
@@ -166,6 +209,8 @@ background-image: url('https://your-project.vercel.app/assets/images/hero.webp')
 | Carousel auto-advances | Stop when offscreen, reset to slide 1 on re-entry, stop permanently on manual click |
 | Adding new carousel item | Ask client for position; renumber data-si; update JS total constant |
 | Mobile carousel | Always add touch swipe, 40px threshold |
+| Sibling accordions/toggles/FAQ panels | Make independent (per-item open state), not mutually exclusive — avoids scroll-jump when one panel's collapse shifts layout above the viewport |
+| Footer copyright year | Compute with `new Date().getFullYear()`, never hardcode — updates automatically every year |
 | Portrait (Shorts) video | `shorts-facade` class, portrait modal |
 | Horizontal video in portrait carousel | Portrait thumbnail + `data-landscape` attr, 16:9 modal |
 | All YouTube embeds | Add `&playsinline=1` (iOS Safari) |
