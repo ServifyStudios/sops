@@ -207,7 +207,7 @@ Worst offenders if uncompressed: hero/carousel images (can be 2–12MB each as J
 
 ---
 
-## 8. Asset Paths — Cloudflare Proxy Projects
+## 9. Asset Paths — Cloudflare Proxy Projects
 
 If the page is served through a Cloudflare Worker proxy (different domain than Vercel), all asset paths must be **absolute URLs** pointing to the Vercel deployment:
 
@@ -223,6 +223,50 @@ background-image: url('https://your-project.vercel.app/assets/images/hero.webp')
 
 ---
 
+## 10. Popups — Trigger Timing and Frequency
+
+Popups (lead magnets, free tools, offers) follow the pattern used for the "How full is FULL" calculator popup on the AJC page.
+
+**Trigger — combine two signals, never fire on load:**
+- **Desktop:** exit-intent (`mouseout` with `clientY <= 0`), gated by a minimum time on page (15s) so it never fires the instant someone lands
+- **Mobile:** exit-intent is unreliable on touch — use scroll depth instead (fires at 55% of page scrolled)
+
+```javascript
+var MIN_TIME_MS = 15000;
+var SCROLL_TRIGGER = 0.55;
+
+function onExitIntent(e) {
+  if (Date.now() - pageLoad < MIN_TIME_MS) return;
+  if (e.clientY <= 0) open();
+}
+function onScroll() {
+  var pct = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight;
+  if (pct >= SCROLL_TRIGGER) open();
+}
+```
+
+**Frequency — once per visitor, not once per session:**
+Use `localStorage`, not `sessionStorage`. Once shown and dismissed (any method), never show again on that browser.
+
+```javascript
+if (localStorage.getItem('yourPopupKey')) return;
+// ...on open: localStorage.setItem('yourPopupKey', '1');
+```
+
+**Close methods — always provide all four:**
+- X button (top-right)
+- A text dismiss link that isn't just "close" — phrase it as the reader declining the offer (e.g. "I already know, thank you")
+- Click on the backdrop (outside the card)
+- Esc key
+
+**Design — matches this project's popup style:**
+- Backdrop: `backdrop-filter: blur(10px)` over a dark tint, not a plain white overlay
+- Card: no border — rely on the blur + a drop shadow (`box-shadow: 0 24px 60px rgba(0,0,0,0.5)`) to separate it from the page
+- Copy structure: eyebrow label ("Free tool") → headline → one paragraph naming the problem → one line naming the benefit → single CTA button → dismiss link
+- CTA opens in a new tab (`target="_blank" rel="noopener"`) so the visitor doesn't lose their place on the sales page
+
+---
+
 ## Quick Reference
 
 | Situation | Rule |
@@ -233,6 +277,9 @@ background-image: url('https://your-project.vercel.app/assets/images/hero.webp')
 | Mobile carousel | Always add touch swipe, 40px threshold |
 | Sibling accordions/toggles/FAQ panels | Make independent (per-item open state), not mutually exclusive — avoids scroll-jump when one panel's collapse shifts layout above the viewport |
 | Footer copyright year | Compute with `new Date().getFullYear()`, never hardcode — updates automatically every year |
+| Popup trigger | Desktop: exit-intent + 15s minimum. Mobile: 55% scroll depth. Never on page load |
+| Popup frequency | localStorage (once per visitor), never sessionStorage |
+| Popup close | Always provide X, dismiss link, backdrop click, and Esc |
 | Portrait (Shorts) video | `shorts-facade` class, portrait modal |
 | Horizontal video in portrait carousel | Portrait thumbnail + `data-landscape` attr, 16:9 modal |
 | All YouTube embeds | Add `&playsinline=1` (iOS Safari) |
